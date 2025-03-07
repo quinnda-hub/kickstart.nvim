@@ -985,8 +985,21 @@ require('lazy').setup({
   {
     'rose-pine/neovim',
     name = 'rose-pine',
+  },
+
+  {
+    'akinsho/toggleterm.nvim',
+    version = '*',
     config = function()
-      vim.cmd 'colorscheme rose-pine'
+      require('toggleterm').setup {
+        size = 20, -- set terminal height for horizontal split
+        open_mapping = [[<c-\>]], -- toggle terminal with Ctrl-\
+        shade_terminals = true,
+        shading_factor = 2,
+        start_in_insert = true,
+        direction = 'horizontal', -- can also be "vertical", "float", or "tab"
+        persist_size = true,
+      }
     end,
   },
 
