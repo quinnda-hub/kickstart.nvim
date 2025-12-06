@@ -823,49 +823,43 @@ require('lazy').setup({
         --
         -- No, but seriously. Please read `:help ins-completion`, it is really good!
         mapping = cmp.mapping.preset.insert {
-          -- next / prev (also keep C-n / C-p for familiarity)
+          -- Select next / prev items
           ['<C-n>'] = cmp.mapping.select_next_item(),
           ['<C-p>'] = cmp.mapping.select_prev_item(),
 
-          -- scroll docs
+          -- Scroll docs
           ['<C-b>'] = cmp.mapping.scroll_docs(-4),
           ['<C-f>'] = cmp.mapping.scroll_docs(4),
 
-          -- Tab confirms the selected item
+          -- Enter confirms the selection
+          ['<CR>'] = cmp.mapping.confirm { select = true },
+
+          -- Tab: cycle items when menu is visible, otherwise expand/jump snippet or fallback
           ['<Tab>'] = cmp.mapping(function(fallback)
             if cmp.visible() then
-              -- confirm the currently selected item
-              cmp.confirm { select = true }
+              cmp.select_next_item()
+            elseif luasnip.expand_or_jumpable() then
+              luasnip.expand_or_jump()
             else
               fallback()
             end
           end, { 'i', 's' }),
 
-          -- Enter also confirms (optional, keep for muscle memory)
-          ['<CR>'] = cmp.mapping.confirm { select = true },
-
-          -- Use 'j' and 'k' to move through the popup WHEN it's visible.
-          -- Otherwise fall back to inserting 'j' / 'k' as usual.
-          ['j'] = cmp.mapping(function(fallback)
-            if cmp.visible() then
-              cmp.select_next_item()
-            else
-              fallback() -- insert 'j'
-            end
-          end, { 'i', 's' }),
-
-          ['k'] = cmp.mapping(function(fallback)
+          -- Shift-Tab: previous item, or jump back in snippet, or fallback
+          ['<S-Tab>'] = cmp.mapping(function(fallback)
             if cmp.visible() then
               cmp.select_prev_item()
+            elseif luasnip.jumpable(-1) then
+              luasnip.jump(-1)
             else
-              fallback() -- insert 'k'
+              fallback()
             end
           end, { 'i', 's' }),
 
           -- Manual trigger
           ['<C-Space>'] = cmp.mapping.complete {},
 
-          -- Snippet navigation (keep these)
+          -- Snippet navigation (keep these if you like)
           ['<C-l>'] = cmp.mapping(function()
             if luasnip.expand_or_locally_jumpable() then
               luasnip.expand_or_jump()
@@ -960,7 +954,7 @@ require('lazy').setup({
     main = 'nvim-treesitter.configs', -- Sets main module to use for opts
     -- [[ Configure Treesitter ]] See `:help nvim-treesitter`
     opts = {
-      ensure_installed = { 'bash', 'c', 'diff', 'html', 'lua', 'luadoc', 'markdown', 'markdown_inline', 'query', 'vim', 'vimdoc' },
+      ensure_installed = { 'bash', 'c', 'diff', 'html', 'lua', 'luadoc', 'markdown', 'markdown_inline', 'query', 'vim', 'vimdoc', 'haskell' },
       -- Autoinstall languages that are not installed
       auto_install = true,
       highlight = {
