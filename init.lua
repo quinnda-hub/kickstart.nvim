@@ -758,6 +758,8 @@ require('lazy').setup({
       formatters_by_ft = {
         lua = { 'stylua' },
         haskell = { 'stylish-haskell' },
+        r = { 'air' },
+        rmd = { 'air' },
         -- Conform can also run multiple formatters sequentially
         -- python = { "isort", "black" },
         --
@@ -954,7 +956,22 @@ require('lazy').setup({
     main = 'nvim-treesitter.configs', -- Sets main module to use for opts
     -- [[ Configure Treesitter ]] See `:help nvim-treesitter`
     opts = {
-      ensure_installed = { 'bash', 'c', 'diff', 'html', 'lua', 'luadoc', 'markdown', 'markdown_inline', 'query', 'vim', 'vimdoc', 'haskell' },
+      ensure_installed = {
+        'bash',
+        'c',
+        'diff',
+        'html',
+        'lua',
+        'luadoc',
+        'markdown',
+        'markdown_inline',
+        'query',
+        'vim',
+        'vimdoc',
+        'haskell',
+        'r',
+        'rnoweb',
+      },
       -- Autoinstall languages that are not installed
       auto_install = true,
       highlight = {
@@ -1008,6 +1025,53 @@ require('lazy').setup({
     'mrcjkb/haskell-tools.nvim',
     version = '^4', -- Recommended
     lazy = false, -- This plugin is already lazy
+  },
+
+  {
+    'R-nvim/R.nvim',
+    lazy = false,
+    config = function()
+      local opts = {
+        R_args = { '--quiet', '--no-save' },
+
+        hook = {
+          on_filetype = function()
+            local b = vim.api.nvim_get_current_buf()
+
+            -- Start / manage R
+            vim.keymap.set('n', '<leader>Rs', '<Plug>RStart', { buffer = b, desc = 'R: start / focus' })
+            vim.keymap.set('n', '<leader>Rw', '<Plug>RSetwd', { buffer = b, desc = 'R: setwd to file dir' })
+            vim.keymap.set('n', '<leader>Rq', '<Plug>RClose', { buffer = b, desc = 'R: quit (no save)' })
+
+            -- Send code
+            vim.keymap.set('n', '<leader>Rl', '<Plug>RDSendLine', { buffer = b, desc = 'R: send line (echo)' })
+            vim.keymap.set('v', '<leader>R', '<Plug>RSendSelection', { buffer = b, desc = 'R: send selection' })
+
+            -- Useful extras you confirmed exist
+            vim.keymap.set('n', '<leader>Rf', '<Plug>RSendCurrentFun', { buffer = b, desc = 'R: send function' })
+            vim.keymap.set('n', '<leader>Rp', '<Plug>RSendChain', { buffer = b, desc = 'R: send pipe chain' })
+          end,
+        },
+
+        -- keep your other settings if you want
+        min_editor_width = 72,
+        rconsole_width = 78,
+
+        disable_cmds = {
+          'RClearConsole',
+          'RCustomStart',
+          'RSPlot',
+          'RSaveClose',
+        },
+      }
+
+      if vim.env.R_AUTO_START == 'true' then
+        opts.auto_start = 'on startup'
+        opts.objbr_auto_start = true
+      end
+
+      require('r').setup(opts)
+    end,
   },
   -- require 'kickstart.plugins.debug',
   -- require 'kickstart.plugins.indent_line',
