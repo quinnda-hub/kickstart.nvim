@@ -300,8 +300,21 @@ require('lazy').setup({
     config = function()
       -- Extra text objects: va) vi' ci" etc., with better search behaviour.
       require('mini.ai').setup { n_lines = 500 }
-      -- Surround: saiw) to wrap a word, sd) to unwrap, sr)] to change.
-      require('mini.surround').setup()
+      -- Surround: gsaiw) to wrap a word, gsd) to unwrap, gsr)] to change.
+      -- Prefixed with `gs` rather than mini's default bare `s`, which would
+      -- shadow vim's `s` (substitute character). `gs` is vim's "sleep", which
+      -- nobody uses.
+      require('mini.surround').setup {
+        mappings = {
+          add = 'gsa',
+          delete = 'gsd',
+          find = 'gsf',
+          find_left = 'gsF',
+          highlight = 'gsh',
+          replace = 'gsr',
+          update_n_lines = 'gsn',
+        },
+      }
       -- Statusline.
       local statusline = require 'mini.statusline'
       statusline.setup { use_icons = false }

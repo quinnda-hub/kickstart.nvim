@@ -78,7 +78,9 @@ opinionated whole-file kind, swap in `ormolu` or `fourmolu` in `init.lua`.
 From `mini.nvim`:
 
 - `mini.ai` — better `vi(`, `ca"`, and friends
-- `mini.surround` — `saiw)` to wrap a word, `sd)` to unwrap, `sr)]` to change
+- `mini.surround` — `gsaiw)` to wrap a word, `gsd)` to unwrap, `gsr)]` to change.
+  Prefixed `gs` rather than mini's default bare `s`, so vim's `s`
+  (substitute character) still works.
 
 Completion is vim's built-in insert-mode completion: `<C-n>` / `<C-p>` for
 words in open buffers, `<C-x><C-f>` for filenames, `<C-x><C-l>` for whole lines.
