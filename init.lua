@@ -286,6 +286,8 @@ require('lazy').setup({
       notify_on_error = true,
       format_on_save = { timeout_ms = 1000 },
       formatters_by_ft = {
+        c = { 'clang-format' },
+        cpp = { 'clang-format' },
         haskell = { 'stylish-haskell' },
         lua = { 'stylua' },
       },

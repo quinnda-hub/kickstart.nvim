@@ -1,8 +1,8 @@
 # nvim
 
 Vim, plus the handful of things worth a plugin. No LSP, no completion engine,
-no diagnostics — GHC and ghci report errors, and `:make` pulls them into the
-quickfix list.
+no diagnostics, no build commands baked into the config — you open a terminal
+and type what you want.
 
 Leader is `<Space>`.
 
@@ -29,38 +29,42 @@ Leader is `<Space>`.
 | `<leader>v` | Vertical split |
 | `<leader>s` | Horizontal split |
 
-## Terminal and building
+## Terminal
 
 | Key | Does |
 | --- | --- |
-| `<C-\>` | Toggle the terminal split |
+| `<C-\>` | Toggle the terminal split. Works from normal, insert and terminal mode. |
+| `2<C-\>` | Second terminal. Any count gets you another one. |
 | `<leader>t` | Floating terminal |
-| `<leader>r` | Run a shell command. Prefilled with the last one, so re-running a build is `<leader>r<CR>`. Saves all buffers first. |
+| `<leader>r` | Prompt for a command, run it in the terminal. Saves all buffers first, and the prompt is prefilled with the last command — so a rebuild is `<leader>r<CR>`. |
 | `<Esc><Esc>` | Leave terminal insert mode |
 
-## Errors, the vim way
+The terminal keeps its shell between toggles, so history and working directory
+survive. Nothing in this config knows how to build anything; `gcc`, `cabal`,
+`make`, `ghci` are things you type.
 
-In a Haskell buffer, `<leader>m` saves everything, builds from the project
-root, and loads GHC's errors into the quickfix list. The quickfix window only
-opens if something is wrong.
+## Quickfix
+
+Generic vim. Nothing populates it automatically, but `:grep`, `:vimgrep` and
+telescope (`<C-q>` from a picker) all do.
 
 | Key | Does |
 | --- | --- |
-| `<leader>m` | Build into quickfix |
-| `]q` / `[q` | Next / previous error |
+| `]q` / `[q` | Next / previous item |
 | `<leader>q` | Toggle the quickfix window |
-| `<leader>i` | ghci (`cabal repl`, `stack ghci`, or plain `ghci <file>`) |
-
-`makeprg` is picked per project: `stack build --fast` if there's a `stack.yaml`,
-`cabal build all` if there's a `.cabal` or `cabal.project`, otherwise
-`ghc -fno-code -Wall %` to typecheck a loose file without emitting artifacts.
 
 ## Formatting
 
 Format on save, plus `<leader>F` to do it by hand.
 
-- Haskell: `stylish-haskell` (configured in `~/.config/stylish-haskell/config.yaml`)
-- Lua: `stylua` (configured in `.stylua.toml`)
+| Filetype | Formatter | Config |
+| --- | --- | --- |
+| C / C++ | `clang-format` | LLVM style by default; drop a `.clang-format` in the project root to change it |
+| Haskell | `stylish-haskell` | `~/.config/stylish-haskell/config.yaml` |
+| Lua | `stylua` | `.stylua.toml` |
+
+`clang-format --style=GNU --dump-config > .clang-format` is the quickest way to
+start from a named style and edit from there.
 
 `stylish-haskell` is a tidier, not a full reformatter: it sorts and aligns
 imports, formats `LANGUAGE` pragmas and records, and strips trailing
@@ -79,6 +83,9 @@ From `mini.nvim`:
 Completion is vim's built-in insert-mode completion: `<C-n>` / `<C-p>` for
 words in open buffers, `<C-x><C-f>` for filenames, `<C-x><C-l>` for whole lines.
 
+Indentation follows the file you're editing (`vim-sleuth`). Haskell defaults to
+2 spaces for new files; that's the only filetype-specific setting in here.
+
 ## Plugins
 
 Twelve, managed by `lazy.nvim`:
@@ -88,3 +95,4 @@ nvim-web-devicons, telescope.nvim, plenary.nvim, telescope-fzf-native.nvim,
 toggleterm.nvim, conform.nvim, mini.nvim.
 
 `:Lazy` to manage them. `:checkhealth` if something looks wrong.
+`:messages` for errors that scrolled past.
