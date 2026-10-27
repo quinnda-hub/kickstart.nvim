@@ -1,25 +1,107 @@
-local ht = require 'haskell-tools'
-local bufnr = vim.api.nvim_get_current_buf()
-local opts = { noremap = true, silent = true, buffer = bufnr }
+-- Haskell: let the compiler be the error checker.
+--
+-- :make (or <leader>m) builds and drops GHC's errors into the quickfix list,
+-- so ]q / [q walk you through them with the cursor landing on the right
+-- line and column. No language server involved.
 
--- CodeLens (for running code lenses from HLS)
-vim.keymap.set('n', '<space>cl', vim.lsp.codelens.run, opts)
+local buf = vim.api.nvim_get_current_buf()
 
--- Hoogle search for the type signature under the cursor
-vim.keymap.set('n', '<space>hs', ht.hoogle.hoogle_signature, opts)
+-- Walk up from this file looking for a project marker.
+-- Returns the project directory and which build tool owns it.
+local function project()
+  local name = vim.api.nvim_buf_get_name(buf)
+  local start = name ~= '' and vim.fs.dirname(name) or vim.fn.getcwd()
 
--- Toggle a GHCi REPL
-vim.keymap.set('n', '<leader>rr', ht.repl.toggle, opts)
-vim.keymap.set('n', '<leader>rf', function()
-  ht.repl.toggle(vim.api.nvim_buf_get_name(0))
-end, opts)
-vim.keymap.set('n', '<leader>rq', ht.repl.quit, opts)
+  local hits = vim.fs.find(function(file)
+    return file == 'stack.yaml' or file == 'cabal.project' or file:match '%.cabal$'
+  end, { path = start, upward = true, type = 'file', limit = math.huge })
 
--- Show available quick fixes
-vim.keymap.set('n', '<leader>ca', vim.lsp.buf.code_action, { noremap = true, silent = true })
+  if #hits == 0 then
+    return nil, nil
+  end
 
--- Hoogle search
-vim.keymap.set('n', '<space>hs', require('haskell-tools').hoogle.hoogle_signature, { noremap = true, silent = true })
+  local dir = vim.fs.dirname(hits[1])
+  for _, hit in ipairs(hits) do
+    if vim.fs.basename(hit) == 'stack.yaml' then
+      return vim.fs.dirname(hit), 'stack'
+    end
+  end
+  return dir, 'cabal'
+end
 
--- Hover info
-vim.keymap.set('n', 'K', vim.lsp.buf.hover, { noremap = true, silent = true })
+local root, tool = project()
+
+if tool == 'stack' then
+  vim.bo.makeprg = 'stack build --fast'
+elseif tool == 'cabal' then
+  vim.bo.makeprg = 'cabal build all'
+else
+  -- Loose file: typecheck only. No .o/.hi droppings, much faster than a link.
+  vim.bo.makeprg = 'ghc -fno-code -Wall %'
+end
+
+-- Matched against real GHC 9.4 and 9.6 output: plain errors, `[GHC-NNNNN]`
+-- coded errors, multi-line `(l,c)-(l,c)` spans, and warnings. The trailing
+-- discard rules throw away cabal's preamble and the ` | ^^^^` source excerpts.
+vim.bo.errorformat = table.concat({
+  [[%-G[%.%#]%.%#]],
+  [[%-G%\s%#]],
+  [[%E%f:%l:%c: error:%m]],
+  [[%W%f:%l:%c: warning:%m]],
+  [[%E%f:%l:%c: error:]],
+  [[%W%f:%l:%c: warning:]],
+  [[%E%f:(%l\,%c)-(%*\d\,%*\d): error:%m]],
+  [[%W%f:(%l\,%c)-(%*\d\,%*\d): warning:%m]],
+  [[%E%f:(%l\,%c)-(%*\d\,%*\d): error:]],
+  [[%W%f:(%l\,%c)-(%*\d\,%*\d): warning:]],
+  [[%-G%\s%#|%.%#]],
+  [[%-G%\d%\+\ |%.%#]],
+  [[%C%\s%\+%m]],
+  [[%-G%.%#]],
+}, ',')
+
+-- Build. Runs from the project root so the paths GHC prints resolve, then
+-- restores your working directory. Quickfix opens only if something is wrong.
+vim.keymap.set('n', '<leader>m', function()
+  local restore = nil
+  if root and root ~= vim.fn.getcwd() then
+    restore = vim.fn.getcwd()
+    vim.cmd('lcd ' .. vim.fn.fnameescape(root))
+  end
+
+  vim.cmd 'silent! wall'
+  vim.cmd 'silent! make'
+
+  if restore then
+    vim.cmd('lcd ' .. vim.fn.fnameescape(restore))
+  end
+
+  local items = vim.fn.getqflist()
+  if #items > 0 then
+    vim.cmd 'copen'
+    vim.cmd 'cfirst'
+  else
+    vim.cmd 'cclose'
+    vim.notify('Build OK', vim.log.levels.INFO)
+  end
+end, { buffer = buf, desc = 'Haskell: build into quickfix' })
+
+-- ghci, in the terminal split, pointed at the right thing.
+vim.keymap.set('n', '<leader>i', function()
+  local cmd
+  if tool == 'stack' then
+    cmd = 'stack ghci'
+  elseif tool == 'cabal' then
+    cmd = 'cabal repl'
+  else
+    cmd = 'ghci ' .. vim.fn.shellescape(vim.fn.expand '%')
+  end
+
+  vim.cmd 'silent! wall'
+  require('toggleterm').exec(cmd, 2, nil, root)
+end, { buffer = buf, desc = 'Haskell: ghci' })
+
+-- Haskell is laid out in 2-space indents by near-universal convention.
+vim.bo.expandtab = true
+vim.bo.shiftwidth = 2
+vim.bo.softtabstop = 2
