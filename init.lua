@@ -1044,12 +1044,12 @@ require('lazy').setup({
             vim.keymap.set('n', '<leader>Rq', '<Plug>RClose', { buffer = b, desc = 'R: quit (no save)' })
 
             -- Send code
-            vim.keymap.set('n', '<leader>Rl', '<Plug>RDSendLine', { buffer = b, desc = 'R: send line (echo)' })
+            vim.keymap.set({ 'n', 'i' }, '<C-CR>', '<Plug>RDSendLine', { buffer = b, desc = 'R: send line' })
             vim.keymap.set('v', '<leader>R', '<Plug>RSendSelection', { buffer = b, desc = 'R: send selection' })
 
-            -- Useful extras you confirmed exist
             vim.keymap.set('n', '<leader>Rf', '<Plug>RSendCurrentFun', { buffer = b, desc = 'R: send function' })
             vim.keymap.set('n', '<leader>Rp', '<Plug>RSendChain', { buffer = b, desc = 'R: send pipe chain' })
+            vim.keymap.set('n', '<leader>Ro', '<Plug>ROBToggle', { buffer = b, desc = 'R: toggle object browser' })
           end,
         },
 
